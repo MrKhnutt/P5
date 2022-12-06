@@ -63,7 +63,7 @@ class RegressionModel(object):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
         from nn import Parameter as P
-        UPPER, LOWER, MINUM = 100, 50, 1
+        UPPER, LOWER, MINUM = 250, 125, 1
         self.multiplier = -(MINUM/10)   # number must be negative
         self.params = [ P(MINUM, UPPER), # w1
                         P(UPPER, LOWER), # w2
@@ -108,8 +108,8 @@ class RegressionModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-        LOSS_TOLEREN = .01
-        DATASET_SIZE = 100
+        LOSS_TOLEREN = .001
+        DATASET_SIZE = 200
         loss = LOSS_TOLEREN * 10 # loss must be > than LOSS_TOLEREN
         # while True:
         while loss > LOSS_TOLEREN:
