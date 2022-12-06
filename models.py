@@ -49,7 +49,8 @@ class PerceptronModel(object):
             for large, small in dataset.iterate_once(1): #large is a 1x2 matrix, small is a 1x1 matrix
                 if self.get_prediction(large) != nn.as_scalar(small):
                     flag = True     # reset the flag
-                    self.w.update(nn.Constant(nn.as_scalar(small)*large.data), 1)
+                    # self.w.update(nn.Constant(nn.as_scalar(small)*large.data), 1)
+                    nn.Parameter.update(self.w, large, nn.as_scalar(small))
                     # updates the parameter using large and small to do the thing, with 1
                     # being the dimensionallity? Not sure...
 
@@ -139,6 +140,16 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        from nn import Parameter as P
+        UPPER, MID, LOWER, MINUM = 784, 100, 10, 1
+        self.multiplier = -(MINUM/200)   # number must be negative
+        self.batch_size = 1
+
+        self.params = [ P(UPPER, MID), # w1
+                        P(MID, LOWER), # w2
+                        P(MINUM, MID), # b1
+                        P(MINUM, LOWER), # b2
+                      ]
 
     def run(self, x):
         """
@@ -155,6 +166,12 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        from nn import ReLU    as R
+        from nn import Linear  as L
+        from nn import AddBias as B
+        a =  R(B(L(x, self.params[0]), self.params[2])) # w1, b1
+        b =  R(B(L(a, self.params[1]), self.params[3])) # w2, b2
+        return b
 
     def get_loss(self, x, y):
         """
@@ -170,9 +187,20 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+
+        while True:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss  = self.get_loss(x, y) # x and y are the same size here, LOWERxMINUM
+                grads = nn.gradients(self.get_loss(x, y), self.params)
+                for param, grad in zip(self.params, grads):
+                    param.update(grad, self.multiplier)
+                loss  = nn.as_scalar(loss)  #update before next iteration
+            if dataset.get_validation_accuracy() >= 0.97:
+                return
